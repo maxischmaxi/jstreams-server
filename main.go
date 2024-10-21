@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strings"
 
 	lib "maxischmaxi/jstreams-server/lib"
 	pb "maxischmaxi/jstreams-server/protos"
@@ -15,6 +16,10 @@ import (
 	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 )
+
+type assetsServer struct {
+	pb.UnimplementedAssetsServiceServer
+}
 
 type championServer struct {
 	pb.UnimplementedChampionsServiceServer
@@ -322,6 +327,118 @@ func (s *versionServer) GetVersions(_ context.Context, in *pb.GetVersionsRequest
 	}, nil
 }
 
+func (s *assetsServer) GetRuneIconRequest(_ context.Context, in *pb.GetRuneIconRequest) (*pb.GetRuneIconResponse, error) {
+	uri, err := lib.GetDDragonRoute(fmt.Sprintf("/cdn/img/%s/img/%v", in.PatchVersion, in.Style))
+
+	if err != nil {
+		log.Fatalf("failed to get rune icon: %v", err)
+	}
+
+	return &pb.GetRuneIconResponse{
+		Url: uri.String(),
+	}, nil
+}
+
+func (s *assetsServer) GetSummonerSpellIcon(_ context.Context, in *pb.GetSummonerSpellIconRequest) (*pb.GetSummonerSpellIconResponse, error) {
+	uri, err := lib.GetDDragonRoute(fmt.Sprintf("/cdn/%s/img/spell/%s", in.PatchVersion, in.Image.Full))
+
+	if err != nil {
+		log.Fatalf("failed to get summoner spell icon: %v", err)
+	}
+
+	return &pb.GetSummonerSpellIconResponse{
+		Url: uri.String(),
+	}, nil
+}
+
+func (s *assetsServer) GetItemAssetUrlRequest(_ context.Context, in *pb.GetItemAssetUrlRequest) (*pb.GetItemAssetUrlResponse, error) {
+	uri, err := lib.GetDDragonRoute(fmt.Sprintf("/cdn/%s/data/en_US/%s.json", in.PatchVersion, in.ItemName))
+
+	if err != nil {
+		log.Fatalf("failed to get item asset url: %v", err)
+	}
+
+	return &pb.GetItemAssetUrlResponse{
+		Url: uri.String(),
+	}, nil
+}
+
+func (s *assetsServer) GetSpellAssetUrl(_ context.Context, in *pb.GetSpellAssetUrlRequest) (*pb.GetSpellAssetUrlResponse, error) {
+	uri, err := lib.GetDDragonRoute(fmt.Sprintf("/cdn/%s/img/spell/%s.png", in.PatchVersion, in.SpellName))
+
+	if err != nil {
+		log.Fatalf("failed to get spell asset url: %v", err)
+	}
+
+	return &pb.GetSpellAssetUrlResponse{
+		Url: uri.String(),
+	}, nil
+}
+
+func (s *assetsServer) GetChampionAbilityAssetUrl(_ context.Context, in *pb.GetChampionAbilityAssetUrlRequest) (*pb.GetChampionAbilityAssetUrlResponse, error) {
+	var championName = strings.ReplaceAll(in.ChampionName, " ", "")
+	uri, err := lib.GetDDragonRoute(fmt.Sprintf("/cdn/%s/img/champion/%s_%v.png", in.PatchVersion, championName, in.AbilityNumber))
+
+	if err != nil {
+		log.Fatalf("failed to get champion ability asset url: %v", err)
+	}
+
+	return &pb.GetChampionAbilityAssetUrlResponse{
+		Url: uri.String(),
+	}, nil
+}
+
+func (s *assetsServer) GetChampionPassiveAssetUrl(_ context.Context, in *pb.GetChampionPassiveAssetUrlRequest) (*pb.GetChampionPassiveAssetUrlResponse, error) {
+	var championName = strings.ReplaceAll(in.ChampionName, " ", "")
+	uri, err := lib.GetDDragonRoute(fmt.Sprintf("/cdn/%s/img/passive/%s_P.png", in.PatchVersion, championName))
+
+	if err != nil {
+		log.Fatalf("failed to get champion passive asset url: %v", err)
+	}
+
+	return &pb.GetChampionPassiveAssetUrlResponse{
+		Url: uri.String(),
+	}, nil
+}
+
+func (s *assetsServer) GetChampionSquareAssetUrl(_ context.Context, in *pb.GetChampionSquareAssetUrlRequest) (*pb.GetChampionSquareAssetUrlResponse, error) {
+	uri, err := lib.GetDDragonRoute(fmt.Sprintf("/cdn/%s/img/champion/%s", in.PatchVersion, in.ChampionName))
+
+	if err != nil {
+		log.Fatalf("failed to get champion square asset url: %v", err)
+	}
+
+	return &pb.GetChampionSquareAssetUrlResponse{
+		Url: uri.String(),
+	}, nil
+}
+
+func (s *assetsServer) GetChampionLoadingScreenAssetUrl(_ context.Context, in *pb.GetChampionLoadingScreenAssetUrlRequest) (*pb.GetChampionLoadingScreenAssetUrlResponse, error) {
+	var championName = strings.ReplaceAll(in.ChampionName, " ", "")
+	uri, err := lib.GetDDragonRoute(fmt.Sprintf("/cdn/img/champion/loading/%s_%v.jpg", championName, in.SkinNumber))
+
+	if err != nil {
+		log.Fatalf("failed to get champion loading screen asset url: %v", err)
+	}
+
+	return &pb.GetChampionLoadingScreenAssetUrlResponse{
+		Url: uri.String(),
+	}, nil
+}
+
+func (s *assetsServer) GetChampionSplashAssetUrl(_ context.Context, in *pb.GetChampionSplashAssetUrlRequest) (*pb.GetChampionSplashAssetUrlResponse, error) {
+	var championName = strings.ReplaceAll(in.ChampionName, " ", "")
+	uri, err := lib.GetDDragonRoute(fmt.Sprintf("/cdn/img/champion/splash/%s_%v.jpg", championName, in.SkinNumber))
+
+	if err != nil {
+		log.Fatalf("failed to get champion splash asset url: %v", err)
+	}
+
+	return &pb.GetChampionSplashAssetUrlResponse{
+		Url: uri.String(),
+	}, nil
+}
+
 func main() {
 	flag.Parse()
 
@@ -344,6 +461,7 @@ func main() {
 	pb.RegisterEntriesServiceServer(s, &entriesServer{})
 	pb.RegisterTierServiceServer(s, &tierServer{})
 	pb.RegisterVersionServiceServer(s, &versionServer{})
+	pb.RegisterAssetsServiceServer(s, &assetsServer{})
 	log.Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to server: %v", err)
