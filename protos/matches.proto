@@ -386,7 +386,8 @@ message Challange {
 }
 
 message Match {
-
+  Metadata metadata = 1;
+  MatchInfo info = 2;
 }
 
 message GetMatchTimelineRequest {
